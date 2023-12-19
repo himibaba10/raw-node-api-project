@@ -16,27 +16,26 @@ handler.handleReqRes = (req, res) => {
   const method = req.method;
   const reqData = { trimmedUrl, queryStrings, headers, method };
 
-  const decoder = new StringDecoder("utf-8");
-  let realData = "";
-
-  //   req.on("data", (buffer) => {
-  //     realData += decoder.write(buffer);
-  //   });
-
-  //   req.on("end", () => {
-  //     console.log(realData);
-  //     decoder.end();
-  //   });
-
   // Handle response
   const chosenPath = trimmedUrl.length ? trimmedUrl : "/";
   const chosenHandler = routes[chosenPath] || notFoundHandler;
 
-  chosenHandler(reqData, (statusCode, payload) => {
-    const payloadString = JSON.stringify(payload);
+  const decoder = new StringDecoder("utf-8");
+  let realData = "";
 
-    res.writeHead(statusCode);
-    res.end(payloadString);
+  req.on("data", (buffer) => {
+    realData += decoder.write(buffer);
+  });
+
+  req.on("end", () => {
+    realData += decoder.end();
+
+    chosenHandler(reqData, (statusCode, payload) => {
+      const payloadString = JSON.stringify(payload);
+
+      res.writeHead(statusCode);
+      res.end(payloadString);
+    });
   });
 };
 
